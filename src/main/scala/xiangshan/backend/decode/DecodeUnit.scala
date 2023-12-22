@@ -443,6 +443,20 @@ object XSTrapDecode extends DecodeConstants {
     TRAP    -> List(SrcType.reg, SrcType.imm, SrcType.X, FuType.alu, ALUOpType.add, Y, N, Y, Y, Y, N, SelImm.IMM_I)
   )
 }
+object MatrixDecode extends DecodeConstants {
+  def MLD = BitPat("b????????????_?????_???_?????_0001011") // matrix load double word
+  //                  offset      addr block mreg custom-0(mld)
+  def MSD = BitPat("b???????_?????_?????_???_?????_0101011") // matrix store double word
+  //                 offset  addr offset block mreg custom-1(msd)
+
+//  def MMUL_I8I32_MM = BitPat("b0000000_?????_?????_000_?????_1011011")
+//  //                                    src2  src1     dest   custom-2
+
+  val table: Array[(BitPat, List[BitPat])] = Array(
+    MLD       -> List(SrcType.reg, SrcType.imm, SrcType.X, FuType.ldu, LSUOpType.ld,  N, N, N, N, N, N, SelImm.IMM_I),
+    MSD       -> List(SrcType.reg, SrcType.mregb, SrcType.X, FuType.stu, LSUOpType.sd,  N, N, N, N, N, N, SelImm.IMM_S)
+  )
+}
 
 //object Imm32Gen {
 //  def apply(sel: UInt, inst: UInt) = {
@@ -584,7 +598,8 @@ class DecodeUnit(implicit p: Parameters) extends XSModule with DecodeUnitConstan
     XSTrapDecode.table ++
     BDecode.table ++
     CBODecode.table ++
-    SvinvalDecode.table
+    SvinvalDecode.table ++
+    MatrixDecode.table
   // assertion for LUI: only LUI should be assigned `selImm === SelImm.IMM_U && fuType === FuType.alu`
   val luiMatch = (t: Seq[BitPat]) => t(3).value == FuType.alu.litValue && t.reverse.head.value == SelImm.IMM_U.litValue
   val luiTable = decode_table.filter(t => luiMatch(t._2)).map(_._1).distinct
@@ -599,6 +614,8 @@ class DecodeUnit(implicit p: Parameters) extends XSModule with DecodeUnitConstan
   val fpDecoder = Module(new FPDecoder)
   fpDecoder.io.instr := ctrl_flow.instr
   cs.fpu := fpDecoder.io.fpCtrl
+
+  cs.mpu.mreg_block_idx := ctrl_flow.instr(14, 12)
 
   val isMove = BitPat("b000000000000_?????_000_?????_0010011") === ctrl_flow.instr
   cs.isMove := isMove && ctrl_flow.instr(RD_MSB, RD_LSB) =/= 0.U && !io.csrCtrl.singlestep && io.csrCtrl.move_elim_enable
