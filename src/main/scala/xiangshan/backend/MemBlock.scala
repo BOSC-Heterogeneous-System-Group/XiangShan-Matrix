@@ -392,7 +392,7 @@ class MemBlockImp(outer: MemBlock) extends LazyModuleImp(outer)
     dtlb_reqs(ld_tlb_ports - 1) <> pf.io.tlb_req
   })
 
-  val matrixReg = new MatrixReg
+  val matrixReg = Module(new MatrixReg)
 
   // StoreUnit
   for (i <- 0 until exuParameters.StuCnt) {
