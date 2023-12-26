@@ -28,6 +28,7 @@ import utils._
 import xiangshan._
 import xiangshan.backend.exu.StdExeUnit
 import xiangshan.backend.fu._
+import xiangshan.backend.fu.mpu.MatrixReg
 import xiangshan.backend.fu.util.SdtrigExt
 import xiangshan.backend.rob.RobLsqIO
 import xiangshan.cache._
@@ -391,6 +392,8 @@ class MemBlockImp(outer: MemBlock) extends LazyModuleImp(outer)
     dtlb_reqs(ld_tlb_ports - 1) <> pf.io.tlb_req
   })
 
+  val matrixReg = new MatrixReg
+
   // StoreUnit
   for (i <- 0 until exuParameters.StuCnt) {
     val stu = storeUnits(i)
@@ -419,7 +422,9 @@ class MemBlockImp(outer: MemBlock) extends LazyModuleImp(outer)
     lsq.io.storeMaskIn(i) <> stu.io.storeMaskOut
 
     // Lsq to std unit's rs
-    lsq.io.storeDataIn(i) := stData(i)
+    // lsq.io.storeDataIn(i) := stData(i)
+    matrixReg.io.storeDataFromStd(i) := stData(i)
+    lsq.io.storeDataIn(i) := matrixReg.io.storeDataToLsq(i)
 
 
     // 1. sync issue info to store set LFST

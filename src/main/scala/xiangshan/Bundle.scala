@@ -151,6 +151,7 @@ class FPUCtrlSignals(implicit p: Parameters) extends XSBundle {
 
 class MPUCtrlSignals(implicit p: Parameters) extends XSBundle {
   val mreg_block_idx = UInt(3.W)
+  val isMatrixStore = Bool()
 }
 
 // Decode DecodeWidth insts at Decode Stage
